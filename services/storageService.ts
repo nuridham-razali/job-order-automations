@@ -4,7 +4,7 @@ import { JobOrder, AppSettings } from '../types';
 // TODO: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
 // If this URL is left as the placeholder, the app will automatically fall back to using
 // browser LocalStorage, allowing you to test the full workflow immediately.
-const API_URL = 'https://script.google.com/macros/library/d/1necCYyS8pO85DHS00OAItMos9uUhtiuGpzHFdJGaBNtDR5xa_RYazqrv/2';
+const API_URL = 'https://script.google.com/macros/library/d/1necCYyS8pO85DHS00OAItMos9uUhtiuGpzHFdJGaBNtDR5xa_RYazqrv/3';
 const LOCAL_STORAGE_KEY = 'halagel_orders';
 const SETTINGS_KEY = 'halagel_settings';
 
