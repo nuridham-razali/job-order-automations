@@ -4,7 +4,7 @@ import { JobOrder, MaterialRow, OrderStatus } from '../types';
 import { StorageService } from '../services/storageService';
 import { generateJobOrderPDF } from '../services/pdfGenerator';
 import { Plus, Trash2, Download, CheckCircle, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
-import SignatureInput from './SignatureInput';
+import { SignatureInput } from './SignatureInput';
 
 interface PlannerFormProps {
   orderId: string;
