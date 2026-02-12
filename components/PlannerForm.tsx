@@ -72,45 +72,59 @@ const PlannerForm: React.FC<PlannerFormProps> = ({ orderId, onClose }) => {
 
   const getValue = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '';
 
-  const getUpdatedOrderFromForm = (status: 'Closed' | 'Pending' | 'Delivered'): JobOrder | undefined => {
+  // Update local state for Final Status radio buttons without saving
+  const handleFinalStatusChange = (newStatus: 'Closed' | 'Pending') => {
+      if (order) {
+          setOrder({ ...order, finalStatus: newStatus });
+      }
+  };
+
+  const getUpdatedOrderFromForm = (isSubmit: boolean): JobOrder | undefined => {
       if (!order) return undefined;
+      
+      // LOGIC:
+      // If submitting (Save & Close), force Final Status to Closed and Main Status to COMPLETED.
+      // If Draft/PDF, keep user's selected Final Status (or default Pending), but force Main Status to PENDING_PLANNER.
+      
+      const resultingFinalStatus = isSubmit ? 'Closed' : (order.finalStatus || 'Pending');
+      const mainStatus = isSubmit ? OrderStatus.COMPLETED : OrderStatus.PENDING_PLANNER;
+
       return {
         ...order,
         materials,
-        finalStatus: status,
-        status: OrderStatus.COMPLETED,
+        finalStatus: resultingFinalStatus,
+        status: mainStatus,
         completionDate: getValue('completionDate'),
         
         jobOrderNo: getValue('jobOrderNo'),
         sectionBDate: getValue('sectionBDate'),
-        plannerRemarks: getValue('plannerRemarks'), // Changed from 'remarks' to 'plannerRemarks'
+        plannerRemarks: getValue('plannerRemarks'),
         
         // Planner Signatures
         plannerPreparedBy: plannerPreparedBy,
         plannerPreparedSignature: plannerSignature,
         plannerPreparedDate: getValue('plannerPreparedDate'),
         
-        // Removed explicit Reviewed/Approved/Received logic from UI capture as elements are gone
-        // They will default to existing or empty string via standard merging/logic if needed, 
-        // but primarily we just don't update them here anymore.
-
         // Footer Status
         qtyDelivered: getValue('qtyDelivered'),
         pendingReason: getValue('pendingReason'),
     };
   }
 
-  const handleSave = async (status: 'Closed' | 'Pending' | 'Delivered') => {
+  const handleSave = async (isSubmit: boolean) => {
     if (!order) return;
     setIsSaving(true);
     
-    const updatedOrder = getUpdatedOrderFromForm(status);
+    const updatedOrder = getUpdatedOrderFromForm(isSubmit);
     if (!updatedOrder) return;
 
     try {
         await StorageService.updateOrder(updatedOrder);
         setOrder(updatedOrder);
-        alert('Order updated!');
+        alert(isSubmit ? 'Order Completed and Closed!' : 'Draft Saved.');
+        if (isSubmit) {
+            onClose(); 
+        }
     } catch (e) {
         alert('Failed to update order.');
     } finally {
@@ -125,16 +139,14 @@ const PlannerForm: React.FC<PlannerFormProps> = ({ orderId, onClose }) => {
     // Minimal delay to allow React to paint the 'Processing...' state
     setTimeout(async () => {
         try {
-            // Auto-save before downloading
-            const currentStatus = order.finalStatus || 'Pending';
-            
-            const updatedOrder = getUpdatedOrderFromForm(currentStatus);
+            // Auto-save as PENDING before downloading (isSubmit = false)
+            const updatedOrder = getUpdatedOrderFromForm(false);
             if (!updatedOrder) return;
 
             // Update local state immediately for responsiveness
             setOrder(updatedOrder);
 
-            // Trigger Save AND PDF Generation in parallel to save time
+            // Trigger Save AND PDF Generation
             const savePromise = StorageService.updateOrder(updatedOrder);
             const pdfPromise = generateJobOrderPDF(updatedOrder);
 
@@ -279,8 +291,24 @@ const PlannerForm: React.FC<PlannerFormProps> = ({ orderId, onClose }) => {
                  <div className="flex items-center">
                      <span className="text-sm font-medium mr-4 w-48 text-gray-900">Status of Job Order:</span>
                      <div className="space-x-4">
-                         <label className="inline-flex items-center text-gray-900 cursor-pointer"><input type="radio" name="status" checked={order.finalStatus === 'Closed'} onClick={() => handleSave('Closed')} className="mr-1 bg-white"/> Closed</label>
-                         <label className="inline-flex items-center text-gray-900 cursor-pointer"><input type="radio" name="status" checked={order.finalStatus === 'Pending'} onClick={() => handleSave('Pending')} className="mr-1 bg-white"/> Pending</label>
+                         <label className="inline-flex items-center text-gray-900 cursor-pointer">
+                             <input 
+                                type="radio" 
+                                name="status" 
+                                checked={order.finalStatus === 'Closed'} 
+                                onChange={() => handleFinalStatusChange('Closed')} 
+                                className="mr-1 bg-white"
+                             /> Closed
+                         </label>
+                         <label className="inline-flex items-center text-gray-900 cursor-pointer">
+                             <input 
+                                type="radio" 
+                                name="status" 
+                                checked={order.finalStatus === 'Pending'} 
+                                onChange={() => handleFinalStatusChange('Pending')} 
+                                className="mr-1 bg-white"
+                             /> Pending
+                         </label>
                      </div>
                  </div>
                  <div className="flex items-center">
@@ -292,10 +320,10 @@ const PlannerForm: React.FC<PlannerFormProps> = ({ orderId, onClose }) => {
 
         {/* Action Footer */}
         <div className="flex justify-end pt-6 border-t space-x-4">
-             <button disabled={isSaving} onClick={() => handleSave('Pending')} className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+             <button disabled={isSaving} onClick={() => handleSave(false)} className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 disabled:opacity-50">
                  {isSaving ? "Saving..." : "Save Draft"}
              </button>
-             <button disabled={isSaving} onClick={() => handleSave('Closed')} className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 flex items-center disabled:opacity-50">
+             <button disabled={isSaving} onClick={() => handleSave(true)} className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 flex items-center disabled:opacity-50">
                 {isSaving ? <Loader2 className="mr-2 w-4 h-4 animate-spin"/> : <CheckCircle className="mr-2 w-4 h-4"/>} 
                 Save & Close
              </button>
