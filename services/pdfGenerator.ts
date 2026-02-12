@@ -515,14 +515,21 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
                 const sigBytes = base64ToUint8Array(signatureBase64);
                 if (sigBytes.length > 0) {
                     const sigImage = await pdfDoc.embedPng(sigBytes);
-                    // Fit signature within the space (Height approx 25-30 pts, Width max sigW - 20)
+                    
+                    // Fit signature within the space.
+                    // Max height reduced to 20 to fit within the ~25pt available space (50 - 25) with padding.
                     const maxWidth = sigW - 20;
-                    const maxHeight = 25;
+                    const maxHeight = 20;
                     const dims = sigImage.scaleToFit(maxWidth, maxHeight);
+                    
+                    // Center vertically between name line (nameLineY) and header bottom (sigLineY)
+                    // The available space is between sigLineY (top) and nameLineY (bottom).
+                    // Example: sigLineY ~ sY+50, nameLineY ~ sY+25.
+                    const centerY = (nameLineY + sigLineY) / 2;
                     
                     page1.drawImage(sigImage, {
                         x: x + (sigW - dims.width) / 2,
-                        y: nameLineY + 3, // Just above the name line
+                        y: centerY - (dims.height / 2),
                         width: dims.width,
                         height: dims.height,
                     });
@@ -695,17 +702,18 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
                 const sigBytes = base64ToUint8Array(signatureBase64);
                 if (sigBytes.length > 0) {
                     const sigImage = await pdfDoc.embedPng(sigBytes);
-                    // Space is roughly from py-30 (header) down to nY2 (name line)
-                    // nY2 is py - 90 + 35 = py - 55. 
-                    // Header ends at py-30.
-                    // So we have space from py-30 down to py-55. Height = 25.
+                    
+                    // Fit signature within the space
                     const maxWidth = sW2 - 10;
-                    const maxHeight = 25;
+                    const maxHeight = 20; // Reduced to prevent overlap
                     const dims = sigImage.scaleToFit(maxWidth, maxHeight);
+                    
+                    // Center vertically between name line (nY2) and header bottom (sY2Line)
+                    const centerY = (nY2 + sY2Line) / 2;
                     
                     page2.drawImage(sigImage, {
                         x: x + (sW2 - dims.width) / 2,
-                        y: nY2 + 5, // Just above name line
+                        y: centerY - (dims.height / 2),
                         width: dims.width,
                         height: dims.height,
                     });
