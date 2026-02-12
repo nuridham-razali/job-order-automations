@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import SalesForm from './components/SalesForm';
 import PlannerDashboard from './components/PlannerDashboard';
 import PlannerForm from './components/PlannerForm';
+import SettingsForm from './components/SettingsForm';
 
-type ViewState = 'list' | 'create' | 'plan';
+type ViewState = 'list' | 'create' | 'plan' | 'settings';
 type Role = 'sales' | 'planner';
 
 const App: React.FC = () => {
@@ -28,9 +30,13 @@ const App: React.FC = () => {
       <Navbar currentRole={role} setRole={setRole} setView={setView} />
       
       <main className="py-6">
-        {/* Intro / Welcome when list is empty for specific roles could go here */}
-        
-        {role === 'sales' && (
+        {/* Settings View (Accessible by both roles) */}
+        {view === 'settings' && (
+            <SettingsForm onBack={() => setView('list')} />
+        )}
+
+        {/* Sales Role Views */}
+        {role === 'sales' && view !== 'settings' && (
             <div className="max-w-7xl mx-auto px-4">
                 {view === 'list' && (
                     <div className="text-center py-20">
@@ -53,7 +59,8 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {role === 'planner' && (
+        {/* Planner Role Views */}
+        {role === 'planner' && view !== 'settings' && (
             <div className="max-w-7xl mx-auto px-4">
                 {view === 'list' && (
                     <PlannerDashboard onSelectOrder={handleSelectOrder} />
