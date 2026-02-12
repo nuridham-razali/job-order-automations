@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { PenTool, Image as ImageIcon, Type, X } from 'lucide-react';
 
@@ -90,8 +91,8 @@ const SignatureInput: React.FC<SignatureInputProps> = ({ label, value, onChange,
         canvas.height = 120;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-            // Using Kunstler Script as requested, with fallback to Great Vibes
-            ctx.font = '60px "Kunstler Script", "Great Vibes", cursive';
+            // Increased font size to 90px and kept 'bold'
+            ctx.font = 'bold 90px "Kunstler Script", "Great Vibes", cursive';
             ctx.fillStyle = 'black';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -162,7 +163,8 @@ const SignatureInput: React.FC<SignatureInputProps> = ({ label, value, onChange,
                     value={typedName}
                     onChange={(e) => setTypedName(e.target.value)}
                     placeholder="Type name here"
-                    className="w-full p-2 border-b border-gray-300 bg-transparent text-center text-4xl focus:outline-none"
+                    // Changed to text-7xl for larger display
+                    className="w-full p-2 border-b border-gray-300 bg-transparent text-center text-7xl font-bold text-black focus:outline-none"
                     style={{ fontFamily: '"Kunstler Script", "Great Vibes", cursive' }}
                 />
             </div>
