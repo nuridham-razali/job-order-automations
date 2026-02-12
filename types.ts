@@ -6,6 +6,10 @@ export enum OrderStatus {
 
 export type Company = 'Halagel Plant (M) Sdn Bhd' | 'Halagel Products Sdn Bhd' | 'Halagel Malaysia Sdn Bhd';
 
+export interface AppSettings {
+  plannerEmail: string;
+}
+
 export interface MaterialRow {
   id: string;
   itemCode: string;
@@ -17,19 +21,19 @@ export interface MaterialRow {
 }
 
 export interface SupplySource {
-  rawMaterial: 'Customer' | 'Halagel' | null;
-  bottle: 'Customer' | 'Halagel' | null;
-  labeling: 'Customer' | 'Halagel' | null;
-  innerBox: 'Customer' | 'Halagel' | null;
-  cap: 'Customer' | 'Halagel' | null;
-  capSeal: 'Customer' | 'Halagel' | null;
-  stopper: 'Customer' | 'Halagel' | null;
-  pvcFoil: 'Customer' | 'Halagel' | null;
-  alumFoil: 'Customer' | 'Halagel' | null;
-  shrinkwrap: 'Customer' | 'Halagel' | null;
-  carton: 'Customer' | 'Halagel' | null;
-  insert: 'Customer' | 'Halagel' | null;
-  others?: 'Customer' | 'Halagel' | null;
+  rawMaterial: string[];
+  bottle: string[];
+  labeling: string[];
+  innerBox: string[];
+  cap: string[];
+  capSeal: string[];
+  stopper: string[];
+  pvcFoil: string[];
+  alumFoil: string[];
+  shrinkwrap: string[];
+  carton: string[];
+  insert: string[];
+  others: string[];
 }
 
 // Base interface for product details
@@ -82,6 +86,7 @@ export interface JobOrder extends ProductSpec {
   
   // Section A Signatures
   salesPreparedBy?: string;
+  salesPreparedSignature?: string; // Base64 signature image
   salesApprovedBy?: string;
   salesReceivedBy?: string; // Kept in type just in case, though removed from UI
   salesDate?: string;
@@ -91,10 +96,11 @@ export interface JobOrder extends ProductSpec {
   jobOrderNo?: string;
   sectionBDate?: string;
   materials?: MaterialRow[];
-  remarks?: string; // Section B Remarks
+  plannerRemarks?: string; // Specific Remarks for Section B to avoid conflict with Section A
   
   // Planner Signatures
   plannerPreparedBy?: string;
+  plannerPreparedSignature?: string; // Base64 signature image
   plannerReviewedBy?: string;
   plannerApprovedBy?: string;
   plannerReceivedBy?: string;
@@ -112,17 +118,17 @@ export interface JobOrder extends ProductSpec {
 }
 
 export const INITIAL_SUPPLY_SOURCE: SupplySource = {
-  rawMaterial: null,
-  bottle: null,
-  labeling: null,
-  innerBox: null,
-  cap: null,
-  capSeal: null,
-  stopper: null,
-  pvcFoil: null,
-  alumFoil: null,
-  shrinkwrap: null,
-  carton: null,
-  insert: null,
-  others: null
+  rawMaterial: [],
+  bottle: [],
+  labeling: [],
+  innerBox: [],
+  cap: [],
+  capSeal: [],
+  stopper: [],
+  pvcFoil: [],
+  alumFoil: [],
+  shrinkwrap: [],
+  carton: [],
+  insert: [],
+  others: []
 };
