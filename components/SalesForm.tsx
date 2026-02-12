@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { JobOrder, ProductSpec, INITIAL_SUPPLY_SOURCE, OrderStatus, SupplySource } from '../types';
 import { StorageService } from '../services/storageService';
 import { Save, Trash2, Loader2 } from 'lucide-react';
-import { SignatureInput } from './SignatureInput';
+import SignatureInput from './SignatureInput';
 
 interface SalesFormProps {
   onComplete: () => void;
