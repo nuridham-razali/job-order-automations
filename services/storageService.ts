@@ -1,11 +1,12 @@
 
-import { JobOrder } from '../types';
+import { JobOrder, AppSettings } from '../types';
 
 // TODO: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
 // If this URL is left as the placeholder, the app will automatically fall back to using
 // browser LocalStorage, allowing you to test the full workflow immediately.
 const API_URL = 'https://script.google.com/macros/s/AKfycbz31_ZNS2hz6JOpih75MxHSju9n0yAJ6jNoedAlfk4qZaKQ4apvAYsD7k1LpZ4SKrME/exec';
 const LOCAL_STORAGE_KEY = 'halagel_orders';
+const SETTINGS_KEY = 'halagel_settings';
 
 export const StorageService = {
   /**
@@ -111,6 +112,60 @@ export const StorageService = {
     } catch (e) {
       console.error("Failed to update order", e);
       throw e;
+    }
+  },
+
+  // --- Settings & Notifications ---
+
+  getSettings: (): AppSettings => {
+    try {
+      const stored = localStorage.getItem(SETTINGS_KEY);
+      return stored ? JSON.parse(stored) : { plannerEmail: '' };
+    } catch (e) {
+      return { plannerEmail: '' };
+    }
+  },
+
+  saveSettings: (settings: AppSettings): void => {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  },
+
+  notifyPlanner: async (order: JobOrder): Promise<boolean> => {
+    const settings = StorageService.getSettings();
+    if (!settings.plannerEmail) {
+        console.log("No planner email configured. Skipping notification.");
+        return false;
+    }
+
+    console.log(`Sending notification to Planner (${settings.plannerEmail}) for Order ${order.poNumber}...`);
+
+    // If using Google Apps Script API
+    if (!API_URL.includes('PASTE_YOUR')) {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    action: 'notify',
+                    email: settings.plannerEmail,
+                    orderId: order.id,
+                    poNumber: order.poNumber,
+                    customer: order.customerName
+                })
+            });
+            return true;
+        } catch (e) {
+            console.error("Failed to send notification via API", e);
+            return false;
+        }
+    } else {
+        // Mock notification for LocalStorage mode
+        // In a real browser-only environment, we can't send emails without a 3rd party service.
+        // We simulate a delay.
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log("Notification 'sent' (simulated).");
+        return true;
     }
   },
 
