@@ -16,7 +16,7 @@ const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ onSelectOrder }) =>
     setLoading(true);
     try {
       const data = await StorageService.getAllOrders();
-      setOrders([...data].reverse()); // Newest first, safely copied
+      setOrders(data.reverse()); // Newest first
     } catch (error) {
       console.error("Failed to fetch orders", error);
     } finally {
@@ -27,6 +27,16 @@ const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ onSelectOrder }) =>
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const formatDate = (isoDate: string) => {
+    if (!isoDate) return '';
+    // Expecting YYYY-MM-DD from input type="date"
+    const parts = isoDate.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return isoDate;
+  };
 
   if (loading) {
     return (
@@ -74,7 +84,7 @@ const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ onSelectOrder }) =>
                     </p>
                     <p className="flex items-center text-sm text-gray-500">
                       <Clock className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                      Due: {order.estDeliveryDate}
+                      Due: {formatDate(order.estDeliveryDate)}
                     </p>
                   </div>
                   <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
