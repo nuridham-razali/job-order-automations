@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Briefcase, ClipboardCheck } from 'lucide-react';
+import { Briefcase, ClipboardCheck, Settings } from 'lucide-react';
 
 interface NavbarProps {
   currentRole: 'sales' | 'planner';
   setRole: (role: 'sales' | 'planner') => void;
-  setView: (view: 'list' | 'create' | 'plan') => void;
+  setView: (view: 'list' | 'create' | 'plan' | 'settings') => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ currentRole, setRole, setView }) => {
@@ -44,6 +44,14 @@ const Navbar: React.FC<NavbarProps> = ({ currentRole, setRole, setView }) => {
             >
               <ClipboardCheck className="w-4 h-4 mr-2" />
               Planner Dashboard
+            </button>
+
+            <button
+              onClick={() => setView('settings')}
+              className="text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              title="Settings"
+            >
+                <Settings className="w-5 h-5" />
             </button>
           </div>
         </div>
