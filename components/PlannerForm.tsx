@@ -4,6 +4,7 @@ import { JobOrder, MaterialRow, OrderStatus } from '../types';
 import { StorageService } from '../services/storageService';
 import { generateJobOrderPDF } from '../services/pdfGenerator';
 import { Plus, Trash2, Download, CheckCircle, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
+import SignatureInput from './SignatureInput';
 
 interface PlannerFormProps {
   orderId: string;
@@ -15,6 +16,10 @@ const PlannerForm: React.FC<PlannerFormProps> = ({ orderId, onClose }) => {
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Local state for signature interactions since they aren't part of the form inputs directly
+  const [plannerSignature, setPlannerSignature] = useState('');
+  const [plannerPreparedBy, setPlannerPreparedBy] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -23,6 +28,8 @@ const PlannerForm: React.FC<PlannerFormProps> = ({ orderId, onClose }) => {
         if (data) {
           setOrder(data);
           setMaterials(data.materials || []);
+          setPlannerSignature(data.plannerPreparedSignature || '');
+          setPlannerPreparedBy(data.plannerPreparedBy || '');
         }
         setLoading(false);
     };
@@ -76,17 +83,16 @@ const PlannerForm: React.FC<PlannerFormProps> = ({ orderId, onClose }) => {
         
         jobOrderNo: getValue('jobOrderNo'),
         sectionBDate: getValue('sectionBDate'),
-        remarks: getValue('remarks'),
+        plannerRemarks: getValue('plannerRemarks'), // Changed from 'remarks' to 'plannerRemarks'
         
         // Planner Signatures
-        plannerPreparedBy: getValue('plannerPreparedBy'),
+        plannerPreparedBy: plannerPreparedBy,
+        plannerPreparedSignature: plannerSignature,
         plannerPreparedDate: getValue('plannerPreparedDate'),
-        plannerReviewedBy: getValue('plannerReviewedBy'),
-        plannerReviewedDate: getValue('plannerReviewedDate'),
-        plannerApprovedBy: getValue('plannerApprovedBy'),
-        plannerApprovedDate: getValue('plannerApprovedDate'),
-        plannerReceivedBy: getValue('plannerReceivedBy'),
-        plannerReceivedDate: getValue('plannerReceivedDate'),
+        
+        // Removed explicit Reviewed/Approved/Received logic from UI capture as elements are gone
+        // They will default to existing or empty string via standard merging/logic if needed, 
+        // but primarily we just don't update them here anymore.
 
         // Footer Status
         qtyDelivered: getValue('qtyDelivered'),
@@ -228,23 +234,32 @@ const PlannerForm: React.FC<PlannerFormProps> = ({ orderId, onClose }) => {
         </div>
 
         <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Remarks</label>
-            <textarea id="remarks" defaultValue={order.remarks || ''} className="w-full border border-gray-300 rounded p-2 h-24 bg-white text-gray-900" />
+            <label className="block text-sm font-bold text-gray-700 mb-2">Remarks (Planner)</label>
+            <textarea id="plannerRemarks" defaultValue={order.plannerRemarks || ''} className="w-full border border-gray-300 rounded p-2 h-24 bg-white text-gray-900" placeholder="Notes for Section B..." />
         </div>
 
         {/* Approvals */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
-            {['Prepared', 'Reviewed', 'Approved', 'Received'].map((role) => {
-                const roleKey = `planner${role}By` as keyof JobOrder;
-                const dateKey = `planner${role}Date` as keyof JobOrder;
-                return (
-                    <div key={role} className="bg-gray-50 p-3 rounded">
-                        <span className="block text-xs font-bold text-gray-500 uppercase mb-2">{role} by</span>
-                        <input id={roleKey} placeholder="Name" className="block w-full mb-2 border rounded p-1 text-sm bg-white text-gray-900" defaultValue={order[roleKey] as string || ''} />
-                        <input id={dateKey} type="date" className="block w-full border rounded p-1 text-sm bg-white text-gray-900" defaultValue={order[dateKey] as string || ''} />
-                    </div>
-                );
-            })}
+        <div className="pt-4 border-t">
+            <div className="bg-gray-50 p-3 rounded max-w-md">
+                <span className="block text-xs font-bold text-gray-500 uppercase mb-2">Prepared by</span>
+                <SignatureInput 
+                    label="Signature"
+                    value={plannerSignature}
+                    onChange={setPlannerSignature}
+                    signerName={plannerPreparedBy}
+                />
+                <div className="mt-2">
+                     <label className="block text-xs text-gray-500 mb-1">Name</label>
+                     <input 
+                         type="text" 
+                         value={plannerPreparedBy} 
+                         onChange={(e) => setPlannerPreparedBy(e.target.value)}
+                         placeholder="Type Name..." 
+                         className="block w-full mb-2 border rounded p-1 text-sm bg-white text-gray-900" 
+                     />
+                </div>
+                <input id="plannerPreparedDate" type="date" className="block w-full border rounded p-1 text-sm bg-white text-gray-900" defaultValue={order.plannerPreparedDate || ''} />
+            </div>
         </div>
 
         {/* Status Footer */}
