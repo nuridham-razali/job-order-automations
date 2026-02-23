@@ -251,6 +251,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ onComplete }) => {
                                   <th className="text-left py-2">Item</th>
                                   <th className="text-center py-2">Customer</th>
                                   <th className="text-center py-2">Halagel</th>
+                                  <th className="text-center py-2">Not Involved</th>
                               </tr>
                           </thead>
                           <tbody>
@@ -269,6 +270,9 @@ const SalesForm: React.FC<SalesFormProps> = ({ onComplete }) => {
                                           </td>
                                           <td className="text-center">
                                               <input type="checkbox" checked={p.supplySource[key]?.includes('Halagel')} onChange={() => supply(key, 'Halagel')} className="bg-white form-checkbox text-brand-600" />
+                                          </td>
+                                          <td className="text-center">
+                                              <input type="checkbox" checked={p.supplySource[key]?.includes('Not Involved')} onChange={() => supply(key, 'Not Involved')} className="bg-white form-checkbox text-brand-600" />
                                           </td>
                                       </tr>
                                   );
