@@ -310,7 +310,13 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
         let ty = cy + 4; 
         rows.forEach(row => {
             drawBox(page1, tblX, ty - tblRowH, 50, tblRowH);
-            drawText(page1, row, tblX + 2, ty - 8, S_SMALL);
+            
+            let displayLabel = row;
+            if (row === 'Others' && p.unitType === 'Others' && p.unitTypeOthers) {
+                displayLabel = p.unitTypeOthers;
+            }
+            
+            drawText(page1, displayLabel, tblX + 2, ty - 8, S_SMALL);
             drawBox(page1, tblX + 50, ty - tblRowH, tblW - 50, tblRowH);
             if (p.unitType === row) {
                 drawText(page1, String(p.orderQuantity || ''), tblX + 55, ty - 8, S_SMALL);
