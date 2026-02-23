@@ -13,6 +13,7 @@ const INITIAL_PRODUCT_SPEC: ProductSpec = {
   productName: '',
   orderQuantity: 0,
   unitType: 'Bottle',
+  unitTypeOthers: '',
   categories: [],
   productTypes: [],
   packingTypes: [],
@@ -140,6 +141,9 @@ const SalesForm: React.FC<SalesFormProps> = ({ onComplete }) => {
                           <select className="w-full border rounded p-2 bg-white text-gray-900" value={p.unitType} onChange={e => change('unitType', e.target.value)}>
                               {['Bottle', 'Blister', 'Box', 'Tube', 'Others'].map(o => <option key={o} value={o}>{o}</option>)}
                           </select>
+                          {p.unitType === 'Others' && (
+                              <input type="text" placeholder="Specify Unit Type..." className="w-full border-b bg-transparent text-xs text-gray-900 mt-2" value={p.unitTypeOthers || ''} onChange={e => change('unitTypeOthers', e.target.value)} />
+                          )}
                       </div>
                       <div>
                            <label className="block text-sm font-bold text-gray-700">Weight Per Item</label>
