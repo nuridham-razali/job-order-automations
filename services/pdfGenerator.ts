@@ -296,7 +296,17 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
         
         drawText(page1, 'PRODUCT NAME :', innerX, cy, S_TEXT);
         drawLine(page1, innerX + 85, cy, innerX + contentW, cy);
-        drawText(page1, p.productName || '', innerX + 87, cy + 2, S_TEXT);
+        
+        const productName = p.productName || '';
+        const maxNameWidth = contentW - 87;
+        let nameSize = S_TEXT;
+        
+        // Reduce font size if text is too long
+        while (font.widthOfTextAtSize(productName, nameSize) > maxNameWidth && nameSize > 4) {
+            nameSize -= 0.5;
+        }
+        
+        drawText(page1, productName, innerX + 87, cy + 2, nameSize);
         
         cy -= 15;
         
@@ -393,10 +403,11 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
         drawText(page1, 'C. REQUIREMENT (PLEASE TICK /)', innerX, cy, S_BOLD, true);
         cy -= 10;
         
-        const reqLabelW = 85;
-        // Space for "Customer" + box + gap + "Halagel" + box
+        const reqLabelW = 75;
+        // Space for "Customer" + box + gap + "Halagel" + box + gap + "Not Involved" + box
         const c1X = innerX + reqLabelW; 
-        const c2X = c1X + 65; 
+        const c2X = c1X + 50; 
+        const c3X = c2X + 50;
         
         const supplySource = p.supplySource || {};
         
@@ -414,14 +425,19 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
             drawText(page1, item.l, innerX, cy, S_SMALL);
             
             drawBox(page1, c1X, cy - 2, CB_W, CB_H);
-            drawText(page1, 'Customer', c1X + 12, cy, S_TINY); 
+            drawText(page1, 'Customer', c1X + 10, cy, S_TINY); 
             // @ts-ignore
             if (supplySource[item.k] && supplySource[item.k].includes('Customer')) drawTick(page1, c1X, cy - 2);
             
             drawBox(page1, c2X, cy - 2, CB_W, CB_H);
-            drawText(page1, 'Halagel', c2X + 12, cy, S_TINY);
+            drawText(page1, 'Halagel', c2X + 10, cy, S_TINY);
             // @ts-ignore
             if (supplySource[item.k] && supplySource[item.k].includes('Halagel')) drawTick(page1, c2X, cy - 2);
+
+            drawBox(page1, c3X, cy - 2, CB_W, CB_H);
+            drawText(page1, 'Not Involved', c3X + 10, cy, S_TINY);
+            // @ts-ignore
+            if (supplySource[item.k] && supplySource[item.k].includes('Not Involved')) drawTick(page1, c3X, cy - 2);
             
             cy -= 10;
         });
@@ -429,12 +445,16 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
         // Others
         drawText(page1, 'OTHERS :', innerX, cy, S_SMALL);
         drawBox(page1, c1X, cy - 2, CB_W, CB_H);
-        drawText(page1, 'Customer', c1X + 12, cy, S_TINY);
+        drawText(page1, 'Customer', c1X + 10, cy, S_TINY);
         if (supplySource.others && supplySource.others.includes('Customer')) drawTick(page1, c1X, cy - 2);
         
         drawBox(page1, c2X, cy - 2, CB_W, CB_H);
-        drawText(page1, 'Halagel', c2X + 12, cy, S_TINY);
+        drawText(page1, 'Halagel', c2X + 10, cy, S_TINY);
         if (supplySource.others && supplySource.others.includes('Halagel')) drawTick(page1, c2X, cy - 2);
+
+        drawBox(page1, c3X, cy - 2, CB_W, CB_H);
+        drawText(page1, 'Not Involved', c3X + 10, cy, S_TINY);
+        if (supplySource.others && supplySource.others.includes('Not Involved')) drawTick(page1, c3X, cy - 2);
 
         // REMARKS WITH BOX
         cy -= 15;
