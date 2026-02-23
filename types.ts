@@ -42,6 +42,7 @@ export interface ProductSpec {
   productName: string;
   orderQuantity: number;
   unitType: 'Bottle' | 'Blister' | 'Box' | 'Tube' | 'Others';
+  unitTypeOthers?: string;
   
   // Section B: Specs
   categories: string[]; 
