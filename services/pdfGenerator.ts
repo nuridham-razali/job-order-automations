@@ -30,7 +30,6 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
     // Font Sizes (Compact)
     const S_TEXT = 8; 
     const S_BOLD = 8;
-    const S_HEADER = 10;
     const S_SMALL = 7;
     const S_TINY = 6;
     
@@ -297,13 +296,18 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
         drawText(page1, 'PRODUCT NAME :', innerX, cy, S_TEXT);
         drawLine(page1, innerX + 85, cy, innerX + contentW, cy);
         
-        const productName = p.productName || '';
+        const productName = sanitize(safeStr(p.productName || ''));
         const maxNameWidth = contentW - 87;
         let nameSize = S_TEXT;
         
         // Reduce font size if text is too long
-        while (font.widthOfTextAtSize(productName, nameSize) > maxNameWidth && nameSize > 4) {
-            nameSize -= 0.5;
+        try {
+            while (font.widthOfTextAtSize(productName, nameSize) > maxNameWidth && nameSize > 4) {
+                nameSize -= 0.5;
+            }
+        } catch (e) {
+            // Fallback if width calculation fails
+            nameSize = 6;
         }
         
         drawText(page1, productName, innerX + 87, cy + 2, nameSize);
@@ -574,226 +578,6 @@ export const generateJobOrderPDF = async (order: JobOrder): Promise<Uint8Array> 
     await drawSigCell(MARGIN + sigW, 'Approved by ( Sales Manager )', '', '', undefined);
 
     drawFooter(page1);
-
-    // --- PAGE 2: PLANNER (SECTION B) ---
-    const page2 = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-    let py = PAGE_HEIGHT - 50; // Match P1 header start
-
-    const sectionBHeaderH = 18;
-    drawFilledBox(page2, MARGIN, py - sectionBHeaderH, CONTENT_WIDTH, sectionBHeaderH, rgb(0.9, 0.9, 0.9));
-    drawBox(page2, MARGIN, py - sectionBHeaderH, CONTENT_WIDTH, sectionBHeaderH);
-    drawText(page2, 'SECTION B (To be completed by Planner )', PAGE_WIDTH / 2, py - 12, S_HEADER, true, 'center');
-
-    py -= (sectionBHeaderH + 15);
-    
-    // Planner Info
-    drawText(page2, 'JOB ORDER NO :', MARGIN + 20, py, S_TEXT, true);
-    drawBox(page2, MARGIN + 100, py - 4, 200, 16);
-    drawText(page2, order.jobOrderNo, MARGIN + 105, py, S_TEXT);
-
-    drawText(page2, 'Date:', MARGIN + 320, py, S_TEXT);
-    drawBox(page2, MARGIN + 350, py - 4, 130, 16);
-    drawText(page2, formatDate(order.sectionBDate), MARGIN + 355, py, S_TEXT);
-
-    py -= 25;
-    
-    // Materials Table
-    const tX = MARGIN;
-    const colWidths = [50, 125, 80, 80, 80, 90]; 
-    const headers = ['Item Code', 'Raw @ Packaging Material', 'Quantity Required\n(kg/pcs)', 'Stock Balance\n(kg/pcs)', 'Quantity to Order\n(kg/pcs)', 'PR No'];
-    
-    const headerH = 28;
-    drawFilledBox(page2, tX, py - headerH, CONTENT_WIDTH, headerH, rgb(0.85, 0.85, 0.85));
-    drawBox(page2, tX, py - headerH, CONTENT_WIDTH, headerH);
-
-    let currX = tX;
-    headers.forEach((h, i) => {
-        const cw = (i === headers.length - 1) ? (CONTENT_WIDTH - (currX - tX)) : colWidths[i];
-        
-        drawBox(page2, currX, py - headerH, cw, headerH);
-        
-        const lines = h.split('\n');
-        const fontSize = 8; // Increased from S_TINY (6)
-        const lineGap = 10;
-        
-        // Vertical centering logic for 28pt high box
-        let hy = py - 13; 
-        if (lines.length > 1) hy = py - 9;
-
-        lines.forEach((l, idx) => {
-            drawText(page2, l, currX + (cw / 2), hy - (idx * lineGap), fontSize, true, 'center'); 
-        });
-        currX += cw;
-    });
-    
-    py -= headerH;
-
-    const rowHeight = 16; 
-    // Reduced row count from 25 to 20 to ensure footer fits
-    const numRows = 20; 
-    
-    for (let i = 0; i < numRows; i++) {
-        const mat = order.materials && order.materials[i];
-        currX = tX;
-        headers.forEach((_, idx) => { // Use headers length to iterate columns
-            const cw = (idx === headers.length - 1) ? (CONTENT_WIDTH - (currX - tX)) : colWidths[idx];
-            
-            drawBox(page2, currX, py - rowHeight, cw, rowHeight);
-            if (mat) {
-                let val = '';
-                if(idx===0) val = mat.itemCode;
-                if(idx===1) val = mat.materialName;
-                if(idx===2) val = String(mat.qtyRequired);
-                if(idx===3) val = String(mat.stockBalance);
-                if(idx===4) val = String(mat.qtyToOrder);
-                if(idx===5) val = mat.prNo;
-                
-                drawText(page2, val, currX + 3, py - 11, S_TEXT, idx === 4);
-            }
-            currX += cw;
-        });
-        py -= rowHeight;
-    }
-
-    py -= 12;
-    drawText(page2, 'Remarks:', MARGIN, py, S_TEXT, true);
-    
-    const remarksGap = 5;
-    const remarksBoxH2 = 50;
-    const remarksBoxBottom = py - remarksGap - remarksBoxH2;
-
-    drawBox(page2, MARGIN, remarksBoxBottom, CONTENT_WIDTH, remarksBoxH2);
-    
-    // Draw Planner Remarks (Section B)
-    if (order.plannerRemarks) {
-        // Use wrapText for Planner remarks too
-        const wrappedPlannerRemarks = wrapText(order.plannerRemarks, CONTENT_WIDTH - 6, S_TEXT, font);
-        let pTextY = py - remarksGap - 10;
-        
-        wrappedPlannerRemarks.forEach(line => {
-            if (pTextY > remarksBoxBottom + 2) {
-                drawText(page2, line, MARGIN + 5, pTextY, S_TEXT);
-                pTextY -= (S_TEXT + 2);
-            }
-        });
-    }
-    
-    // REDUCED GAP TO 3 (as requested ~1.2)
-    py = remarksBoxBottom - 3; 
-
-    // Page 2 Signatures - 4 Columns: Prepared, Reviewed, Approved, Received
-    const sigH2 = 90; // Reduced height slightly
-    const sW2 = CONTENT_WIDTH / 4; 
-    
-    const nY2 = py - sigH2 + 35; // Moved up slightly
-    const dY2 = py - sigH2 + 15; 
-    
-    // Header Logic
-    const sigHeaderH2 = 30; // Increased height to accommodate 2 lines
-    const sY2Line = py - sigHeaderH2; 
-
-    // Gray Header Backgrounds
-    for(let i=0; i<4; i++) {
-        drawFilledBox(page2, MARGIN + i*sW2, py - sigHeaderH2, sW2, sigHeaderH2, rgb(0.9, 0.9, 0.9));
-    }
-    // Redraw box borders over filled backgrounds for crispness
-    drawBox(page2, MARGIN, py - sigH2, CONTENT_WIDTH, sigH2);
-    drawLine(page2, MARGIN + sW2, py, MARGIN + sW2, py - sigH2);
-    drawLine(page2, MARGIN + 2*sW2, py, MARGIN + 2*sW2, py - sigH2);
-    drawLine(page2, MARGIN + 3*sW2, py, MARGIN + 3*sW2, py - sigH2);
-    drawLine(page2, MARGIN, sY2Line, MARGIN + CONTENT_WIDTH, sY2Line);
-
-    // Name/Date Lines
-    drawLine(page2, MARGIN, nY2, MARGIN + CONTENT_WIDTH, nY2);
-    drawLine(page2, MARGIN, dY2, MARGIN + CONTENT_WIDTH, dY2);
-
-    const drawSigCell2 = async (idx: number, titleLines: string[], name: string | undefined, date: string | undefined, signatureBase64: string | undefined) => {
-        const x = MARGIN + (idx * sW2);
-        
-        // Center Title (multiline support)
-        let tY = py - 18;
-        if (titleLines.length > 1) tY = py - 12;
-        
-        titleLines.forEach((line, lineIdx) => {
-             const tw = boldFont.widthOfTextAtSize(line, S_SMALL);
-             const tx = x + (sW2 - tw) / 2;
-             // Increased line spacing slightly
-             drawText(page2, line, tx, tY - (lineIdx * 10), S_SMALL, true);
-        });
-        
-        // Draw Signature for Planner Prepared By (idx 0) if available
-        // Could technically add signature slots for others, but prompt only asked for "Prepared By"
-        if (signatureBase64 && idx === 0) {
-             try {
-                const sigBytes = base64ToUint8Array(signatureBase64);
-                if (sigBytes.length > 0) {
-                    const sigImage = await pdfDoc.embedPng(sigBytes);
-                    
-                    // Fit signature within the space
-                    const maxWidth = sW2 - 10;
-                    const maxHeight = 20; // Reduced to prevent overlap
-                    const dims = sigImage.scaleToFit(maxWidth, maxHeight);
-                    
-                    // Center vertically between name line (nY2) and header bottom (sY2Line)
-                    const centerY = (nY2 + sY2Line) / 2;
-                    
-                    page2.drawImage(sigImage, {
-                        x: x + (sW2 - dims.width) / 2,
-                        y: centerY - (dims.height / 2),
-                        width: dims.width,
-                        height: dims.height,
-                    });
-                }
-            } catch (err) { console.error("Signature embed error P2", err); }
-        }
-
-        drawText(page2, 'Name :', x + 3, nY2 - 8, S_TINY);
-        drawText(page2, name || '', x + 30, nY2 - 8, S_SMALL);
-        drawText(page2, 'Date :', x + 3, dY2 - 8, S_TINY);
-        drawText(page2, formatDate(date), x + 30, dY2 - 8, S_SMALL);
-    };
-
-    await drawSigCell2(0, ['Prepared by', '( Production Planner )'], order.plannerPreparedBy, order.plannerPreparedDate, order.plannerPreparedSignature);
-    await drawSigCell2(1, ['Reviewed by', '( Production Manager )'], order.plannerReviewedBy, order.plannerReviewedDate, undefined);
-    await drawSigCell2(2, ['Approved by', '( Plant Manager )'], order.plannerApprovedBy, order.plannerApprovedDate, undefined);
-    await drawSigCell2(3, ['Received by', '( Production HOD )'], order.plannerReceivedBy, order.plannerReceivedDate, undefined);
-
-    // Reduced gap here too
-    py -= sigH2 + 8; 
-    
-    // Final Status Section
-    drawLine(page2, MARGIN, py, PAGE_WIDTH - MARGIN, py);
-    drawLine(page2, MARGIN, py - 2, PAGE_WIDTH - MARGIN, py - 2);
-    
-    py -= 15;
-    drawText(page2, 'Date of Job Order completion :', MARGIN, py, S_TEXT);
-    drawBox(page2, MARGIN + 140, py - 4, 100, 14);
-    drawText(page2, formatDate(order.completionDate), MARGIN + 145, py + 1, S_TEXT);
-
-    drawText(page2, 'Quantity delivered :', MARGIN + 260, py, S_TEXT);
-    drawBox(page2, MARGIN + 340, py - 4, 100, 14);
-    drawText(page2, order.qtyDelivered, MARGIN + 345, py + 1, S_TEXT);
-
-    py -= 20;
-    drawText(page2, 'Status of Job Order:', MARGIN, py, S_TEXT);
-    
-    const statusBoxW = CB_W + 4; // 12
-    const statusBoxH = 12;
-
-    drawBox(page2, MARGIN + 140, py - 2, statusBoxW, statusBoxH);
-    if(order.finalStatus === 'Closed') drawTick(page2, MARGIN + 140, py - 2, statusBoxW, statusBoxH); 
-    drawText(page2, 'Closed', MARGIN + 160, py + 1, S_TEXT);
-
-    drawBox(page2, MARGIN + 260, py - 2, statusBoxW, statusBoxH);
-    if(order.finalStatus === 'Pending') drawTick(page2, MARGIN + 260, py - 2, statusBoxW, statusBoxH); 
-    drawText(page2, 'Pending', MARGIN + 280, py + 1, S_TEXT);
-
-    py -= 20;
-    drawText(page2, 'Reason of pending :', MARGIN, py, S_TEXT);
-    drawLine(page2, MARGIN + 100, py - 2, PAGE_WIDTH - MARGIN, py - 2);
-    drawText(page2, order.pendingReason, MARGIN + 105, py, S_TEXT);
-
-    drawFooter(page2);
 
     console.log("PDF Generation Complete.");
     return await pdfDoc.save();
