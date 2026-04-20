@@ -3,13 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { StorageService } from '../services/storageService';
 import { generateJobOrderPDF } from '../services/pdfGenerator';
 import { JobOrder } from '../types';
-import { FileText, Clock, RefreshCw, Download } from 'lucide-react';
+import { FileText, Clock, RefreshCw, Download, Pencil } from 'lucide-react';
 
 interface PlannerDashboardProps {
   onSelectOrder: (id: string) => void;
+  onEditOrder?: (order: JobOrder) => void;
 }
 
-const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ onSelectOrder }) => {
+const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ onSelectOrder, onEditOrder }) => {
   const [orders, setOrders] = useState<JobOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -96,7 +97,19 @@ const PlannerDashboard: React.FC<PlannerDashboardProps> = ({ onSelectOrder }) =>
                       </div>
                     </div>
                   </div>
-                  <div className="ml-4 flex-shrink-0 flex items-center space-x-4">
+                  <div className="ml-4 flex-shrink-0 flex items-center space-x-2">
+                    {onEditOrder && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEditOrder(order);
+                            }}
+                            className="text-gray-400 hover:text-brand-600 transition-colors p-2 rounded-full hover:bg-gray-100"
+                            title="Edit Order"
+                        >
+                            <Pencil className="h-5 w-5" />
+                        </button>
+                    )}
                     <button
                         onClick={(e) => handleDownloadPDF(e, order)}
                         className="text-gray-400 hover:text-brand-600 transition-colors p-2 rounded-full hover:bg-gray-100"
