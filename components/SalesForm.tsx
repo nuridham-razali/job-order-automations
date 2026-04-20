@@ -7,6 +7,7 @@ import SignatureInput from './SignatureInput';
 
 interface SalesFormProps {
   onComplete: () => void;
+  initialData?: JobOrder | null;
 }
 
 const INITIAL_PRODUCT_SPEC: ProductSpec = {
@@ -41,11 +42,14 @@ const INITIAL_ORDER: JobOrder = {
   salesDate: new Date().toISOString().split('T')[0]
 };
 
-const SalesForm: React.FC<SalesFormProps> = ({ onComplete }) => {
-  const [data, setData] = useState<JobOrder>({ 
-    ...INITIAL_ORDER, 
-    id: StorageService.generateId(),
-    createdAt: new Date().toISOString()
+const SalesForm: React.FC<SalesFormProps> = ({ onComplete, initialData }) => {
+  const [data, setData] = useState<JobOrder>(() => {
+    if (initialData) return initialData;
+    return { 
+      ...INITIAL_ORDER, 
+      id: StorageService.generateId(),
+      createdAt: new Date().toISOString()
+    };
   });
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'product1' | 'product2'>('product1');
@@ -98,10 +102,13 @@ const SalesForm: React.FC<SalesFormProps> = ({ onComplete }) => {
     }
     setIsSaving(true);
     try {
-        await StorageService.createOrder(data);
-        
-        // Attempt to notify planner
-        await StorageService.notifyPlanner(data);
+        if (initialData) {
+            await StorageService.updateOrder(data);
+        } else {
+            await StorageService.createOrder(data);
+            // Attempt to notify planner
+            await StorageService.notifyPlanner(data);
+        }
         
         onComplete();
     } catch (e) {
